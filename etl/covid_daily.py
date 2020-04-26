@@ -5,8 +5,8 @@ import requests
 import csv
 from io import StringIO
 
-from utils import get_root_dir
-from etl.constants import CovidConfigs
+from etl.constants import ETLConfigs
+from utils import DBUpdates
 
 
 class CovidPipeline:
@@ -40,26 +40,17 @@ class CovidPipeline:
 
     """
 
-    def __init__(self):
-        # Interfaces
+    def __init__(self, dbupdates=DBUpdates()):
+        # Payload and sql interface
+        self.database = dbupdates
         self.body = pd.DataFrame()
 
         # String properties
-        self.df_names_url_dict = CovidConfigs.DF_NAME_URL_DICT
-        self.drop_columns = CovidConfigs.DROP_COLUMNS
-        self.location_column_dict = CovidConfigs.LOCATION_COLUMN_DICT
-        self.csv_name = CovidConfigs.CSV_NAME
-        self.locations = CovidConfigs.LOCATION_COLUMNS
-
-        # SQL properties
-        self.schema = CovidConfigs.SCHEMA
-        self.table = CovidConfigs.TABLE
-        self.setup_sql_script = CovidConfigs.SETUP_SQL_SCRIPT
-        self.swap_sql_script = CovidConfigs.SWAL_SQL_SCRIPT
-        self.staging_table = CovidConfigs.STAGING_TABLE
-
-        # Initial state
-        self.state = CovidConfigs.State.NEW
+        self.df_names_url_dict = ETLConfigs.DF_NAME_URL_DICT
+        self.drop_columns = ETLConfigs.DROP_COLUMNS
+        self.location_column_dict = ETLConfigs.LOCATION_COLUMN_DICT
+        self.csv_name = ETLConfigs.CSV_NAME
+        self.locations = ETLConfigs.LOCATION_COLUMNS
 
     def download_to_df(self, url):
         """Given an url to a hosted csv file, download and stores as DataFrame
@@ -141,63 +132,47 @@ class CovidPipeline:
         )
         return df_melt
 
-    @property
-    def setup_command(self):
-        """
-		Retrieves the SQL script stored in a .sql file format used to set up the redshift tables
-		:return: String representation of SQL script
-		"""
-        with open(
-            "{}/sql/{}.sql".format(CODEX_ROOT, self.setup_sql_script)
-        ) as covid_daily_setup_file:
-            covid_daily_setup = covid_daily_setup_file.read()
-
-        return covid_daily_setup
-
-    @property
-    def swap_command(self):
-        """
-		Retrieves the SQL script stored in a .sql file format used to set up the redshift tables
-		:return: String representation of SQL script
-		"""
-        with open(
-            "{}/sql/{}.sql".format(CODEX_ROOT, self.swap_sql_script)
-        ) as covid_daily_swap_file:
-            covid_daily_swap = covid_daily_swap_file.read()
-
-        return covid_daily_swap
-
     def setup(self):
-        """
-        Executes setup SQL command to prepare database for the storage of Covid-19 daily data.
+        """Executes setup SQL command to prepare database for the storage of Covid-19 daily data.
         Method can only be used if working with new instance of CoviddailyConfig object in NEW state, or an instance
         of an object that has completed processing and in a POST TEAR DOWN state
-        :return: None
         """
-        self.aws.redshift.execute_command(self.setup_command)
+        self.database.create_table()
 
     def extract(self):
         """Executes the source query for daily covid report data where 
-        
-        Raises:
-            ValueError: [description]
         """
-        self.df_confirmed_global = self.download_to_df(self.df_names_url_dict["confirmed_global"])
-        self.df_confirmed_usa = self.download_to_df(self.df_names_url_dict["confirmed_usa"])
-        self.df_death_global = self.download_to_df(self.df_names_url_dict["death_global"])
+
+        self.df_confirmed_global = self.download_to_df(
+            self.df_names_url_dict["confirmed_global"]
+        )
+        self.df_confirmed_usa = self.download_to_df(
+            self.df_names_url_dict["confirmed_usa"]
+        )
+        self.df_death_global = self.download_to_df(
+            self.df_names_url_dict["death_global"]
+        )
         self.df_death_usa = self.download_to_df(self.df_names_url_dict["death_usa"])
 
     def transform(self):
 
         # transform date fields, and calculate the daily deltas
-        self.df_confirmed_global = self.calculate_daily_delta(self.df_confirmed_global, "confirmed")
-        self.df_confirmed_usa = self.calculate_daily_delta(self.df_confirmed_usa, "confirmed")
+        self.df_confirmed_global = self.calculate_daily_delta(
+            self.df_confirmed_global, "confirmed"
+        )
+        self.df_confirmed_usa = self.calculate_daily_delta(
+            self.df_confirmed_usa, "confirmed"
+        )
         self.df_death_global = self.calculate_daily_delta(self.df_death_global, "death")
         self.df_death_usa = self.calculate_daily_delta(self.df_death_usa, "death")
 
         # join the confirmed and deaths figures by global and USA
-        self.global_all = self.df_confirmed_global.join(self.df_death_global["death"], how="left")
-        self.usa_all = self.df_confirmed_usa.join(self.df_death_usa["death"], how="left")
+        self.global_all = self.df_confirmed_global.join(
+            self.df_death_global["death"], how="left"
+        )
+        self.usa_all = self.df_confirmed_usa.join(
+            self.df_death_usa["death"], how="left"
+        )
 
         # concatenate everything together as the payload upload
         self.body = pd.concat([self.global_all, self.usa_all])
@@ -214,20 +189,14 @@ class CovidPipeline:
     def load(self):
 
         # TODO: make this differently
-        self.aws.s3.push_to_bucket_csv(
-            dataframe=self.body, target_filename_csv=self.csv_name
-        )
-        self.aws.redshift.copy_table_from_csv(
-            file=self.csv_name, schema=self.schema, table=self.staging_table
-        )
+        self.database.insert_to_table(self.body)
 
     def teardown(self):
 
         # TODO: execute swap command
-        self.aws.s3.delete_file_from_bucket(file_name=self.csv_name)
-        self.aws.redshift.execute_command(self.swap_command)
+        self.database.swap_tables()
 
-    def handle(self):
+    def run_pipeline(self):
 
         self.setup()
         self.extract()

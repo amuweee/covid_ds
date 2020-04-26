@@ -1,4 +1,4 @@
-class CovidConfigs:
+class ETLConfigs:
 
     # source data
     DF_NAME_URL_DICT = {
@@ -34,4 +34,7 @@ class CovidConfigs:
     CSV_NAME = "covid_daily_data.csv"
 
     # SQL properties
-    SETUP_SQL_SCRIPT = "setup_covid_daily"
+    DB_NAME = "covid_master"
+    TABLE_NAME = "covid_daily"
+    SETUP_SQL_SCRIPT = "setup_table"
+    SWAP_SQL_SCRIPT = "swap_table"

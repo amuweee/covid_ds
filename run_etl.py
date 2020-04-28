@@ -1,5 +1,3 @@
-#! python
-
 import etl.covid_daily
 import etl.worldpop
 import os.path

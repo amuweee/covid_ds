@@ -49,7 +49,6 @@ class CovidPipeline:
         self.df_names_url_dict = ETLConfigs.DF_NAME_URL_DICT
         self.drop_columns = ETLConfigs.DROP_COLUMNS
         self.location_column_dict = ETLConfigs.LOCATION_COLUMN_DICT
-        self.csv_name = ETLConfigs.CSV_NAME
         self.locations = ETLConfigs.LOCATION_COLUMNS
 
     def download_to_df(self, url):

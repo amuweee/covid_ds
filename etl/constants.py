@@ -70,7 +70,7 @@ class WorldPopConfig:
     }
 
     # SQL properties
-    DB_NAME = "covid_master"
+    DB_NAME = "population"
     TABLE_NAME = "world_population"
     SETUP_SQL = "DROP TABLE IF EXISTS {}".format(TABLE_NAME)
     SQL_DTYPES = {

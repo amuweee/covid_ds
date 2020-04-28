@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import csv
 from io import StringIO
+pd.options.mode.chained_assignment = None
 
 from etl.constants import ETLConfigs
 from utils import DBUpdates

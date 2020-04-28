@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+pd.options.mode.chained_assignment = None
 
 from etl.constants import WorldPopConfig
 from utils import WorldPopUpdates
@@ -28,7 +29,7 @@ class WorldPopPipepine:
     def extract(self):
 
         response = requests.get(self.source_url)
-        data = BeautifulSoup(response.content).find_all("table")
+        data = BeautifulSoup(response.content, features="lxml").find_all("table")
 
         self.body = pd.read_html(str(data))[0]
 

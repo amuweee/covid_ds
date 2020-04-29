@@ -1,3 +1,6 @@
+# Source data at
+# https://github.com/CSSEGISandData/COVID-19
+
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -11,34 +14,25 @@ from utils import DBUpdates
 
 
 class CovidPipeline:
-    """
-    Class for handling tasks associated with retrieving, transforming to database setup, and writing to redshift
+    """ Class for handling tasks associated with retrieving, transforming to database setup, and writing to SQLite db
 
-    Uses Pandas dataframe object as intermediate storage and transfer mechanism.
-    >>> covid_daily = CovidDailyData()
-    >>> payload = covid_daily.body
-    >>> type(payload)
-    pandas.core.frame.DataFrame
-
-    Interfaces & Services
+    Payload and interface
     ---------------------
-    aws (Default: AWSInterface) - Provides access and methods to both AWS Redshift and AWS S3. Wrapper class
-    for RedshiftInterface and S3Interface.
+    All intermediate data storage and transformation are performed in pd.DataFrames
+    Once complete, open/create the databse connection and update/store the data
 
-    State Control
-    -------------
-    Utilizes basic state flow control to prevent invalid transitions that may cause issues with the data.
-    E.g. Once instance body has been transformed, it cannot be sent through the transform process
-    again.
-    # TODO: Add docstring here
     Pipeline
     --------
     1. Setup
+        i) Create staging table
     2. Extract
+        i) Extract csv file from source gitrepo
     3. Transform
+        i) Transform and merge the data
     4. Load
+        i) Insert dataframes into staging table
     5. Teardown
-
+        i) Swap staging and drop old table
     """
 
     def __init__(self, dbupdates=DBUpdates()):
@@ -134,13 +128,13 @@ class CovidPipeline:
 
     def setup(self):
         """Executes setup SQL command to prepare database for the storage of Covid-19 daily data.
-        Method can only be used if working with new instance of CoviddailyConfig object in NEW state, or an instance
-        of an object that has completed processing and in a POST TEAR DOWN state
+        This will create a new staging table
         """
         self.database.create_table()
 
     def extract(self):
-        """Executes the source query for daily covid report data where 
+        """Executes the source script for daily covid timeseries data where the csv files hosted
+        on the source gitrepo and store to individual dataframes
         """
 
         self.df_confirmed_global = self.download_to_df(
@@ -155,6 +149,9 @@ class CovidPipeline:
         self.df_death_usa = self.download_to_df(self.df_names_url_dict["death_usa"])
 
     def transform(self):
+        """Transform each dataframe to calculate the daily deltas, as well as reformatting the date
+        Then merge all dataframes together, and unpivot the dates so that it'll be in a database friendly format
+        """
 
         # transform date fields, and calculate the daily deltas
         self.df_confirmed_global = self.calculate_daily_delta(
@@ -187,20 +184,24 @@ class CovidPipeline:
         self.body["etl_load_time"] = dt.datetime.now()
 
     def load(self):
+        """Load the finalized DataFrame into the staging table in databse
+        """
 
-        # TODO: make this differently
         self.database.insert_to_table(self.body)
 
     def teardown(self):
+        """Swap the existing to old, stage to new, and drop the old
+        """
 
         # TODO: execute swap command
         self.database.swap_tables()
 
     def run_pipeline(self):
+        """Defines pipeline steps
+        """
 
         self.setup()
         self.extract()
         self.transform()
         self.load()
         self.teardown()
-

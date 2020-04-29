@@ -40,11 +40,18 @@ class DBUpdates:
         self.cur = self.conn.cursor()
 
     def create_table(self):
+        """Executes setup SQL commands to create staging table
+        """
 
         self.cur.execute(self.setup_sql_command)
         self.conn.commit()
 
     def insert_to_table(self, df):
+        """Loads the completed DataFrame into staging table
+
+        Args:
+            df (pd.DataFrame): payload containing the ready data object to db insert
+        """
         
         df.to_sql(
             name="covid_daily_new",
@@ -55,6 +62,8 @@ class DBUpdates:
         )
 
     def swap_tables(self):
+        """Executes SQL commands to swap, and drop tables
+        """
 
         self.cur.executescript(self.swap_sql_command)
         self.conn.commit()
@@ -63,8 +72,13 @@ class DBUpdates:
 
 
 class WorldPopUpdates:
+    """Class for wrapping all the scripte related to updating the SQLite3 database
+    """
 
     def __init__(self):
+        """Setting all constants and props required to run SQL commands
+        """
+
         # Static properties
         self.project_root = project_root()
         self.database_name = WorldPopConfig.DB_NAME
@@ -79,11 +93,18 @@ class WorldPopUpdates:
         self.cur = self.conn.cursor()
 
     def drop_existing_table(self):
+        """Executes the setup commands to drop existing tables if any
+        """
 
         self.cur.execute(self.setup_sql_command)
         self.conn.commit()
 
     def create_insert_table(self, df):
+        """Create the table to insert data into
+
+        Args:
+            df (pd.DataFrame): payload containing the ready data object to db insert
+        """
         
         df.to_sql(
             name=self.table_name,

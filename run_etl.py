@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # Check if database exsit and whether to download population db
     root_path = project_root()
     db = WorldPopConfig.DB_NAME
-    if os.path.isfile("{}/{}.db".format(root_path, db)):
+    if os.path.isfile("{}/{}.db".format(root_path, db)) == False:
         run_worldpop = etl.worldpop.WorldPopPipepine()
         run_worldpop.run_pipeline()
 

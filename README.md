@@ -9,7 +9,7 @@ The timeseries data is transformed and stored into each data sources are stored 
 
 ### Installing
 
-This repo was created with python version 3.6 and a virtual environment is recommended.  
+This repo was created with python version 3.6 in linux, and a virtual environment is recommended. 
 Natigate to the project root and run following commands to setup and install preprequisites
 
 ```

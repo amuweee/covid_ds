@@ -2,4 +2,5 @@
 .vscode
 .playground
 *.db
+*.db-journal
 __pycache__

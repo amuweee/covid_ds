@@ -1,7 +1,7 @@
-# COVID-19 Data Science
+# COVID-19 Data Project
 
 
-**Disclaimer: This project is for fun and learning purpose, take the predictions with a grain of salt**
+**Disclaimer: This project is for self-learning purpose, take the predictions with a grain of salt**
 
 This repository contains codes and scripts related to extracting daily infected and death data from gitrepo maintained by [JHUCSSE COVID-19 Data](https://github.com/CSSEGISandData/COVID-19).  
 World population data scraped from [Worldometer](https://www.worldometers.info/world-population/population-by-country/).  
@@ -22,9 +22,11 @@ pip install -r requirements.txt
 
 Project is separated into multiple sections
 - **ETL** Retrieving COVID-19 infected and death data, along with world population data 
+- **Data Preprocessing** Scripts and notebooks related to preprocessing the raw data
 
 ### ETL 
 
+Contains scripts related to Extract, Transform, and Load from data source into a local SQLite database.  
 Data are downloaded from source, transformed in format convenient for database storage, and loaded into separate SQLite databases.
 Run below command under virtual environment to download and store into a local SQLite databases
 ```
@@ -40,8 +42,10 @@ and add the below line to the bottome of file
 00 00 * * * /path/to/project/.venv/bin/python /path/to/project/run_etl.py >> /path/to/log.log 2>&1
 ```
 
-### Map Visualization
+### Data Preprocessing
 
+Contains notebooks on data exploration and data cleanup.
 
+### Dashboards
 
 ### Prediction

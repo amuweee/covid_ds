@@ -6,7 +6,7 @@ missingno==0.4.2
 
 # mapping and dashbords
 dash==1.12.0
-ployly==4.7.0
+plotly==4.7.0
 
 # etl specific
 requests==2.23.0

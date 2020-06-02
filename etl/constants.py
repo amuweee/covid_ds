@@ -87,3 +87,9 @@ class WorldPopConfig:
         "urban_pop_perc": "TEXT",
         "population_world_share": "TEXT",
     }
+
+
+class DBViewConfig:
+
+    DB_NAME = ETLConfigs.DB_NAME
+    SQL_SCRIPT = "create_views"

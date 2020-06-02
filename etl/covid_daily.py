@@ -7,10 +7,11 @@ import pandas as pd
 import requests
 import csv
 from io import StringIO
+
 pd.options.mode.chained_assignment = None
 
 from etl.constants import ETLConfigs
-from utils import DBUpdates
+from utils import DBUpdates, CreateViews
 
 
 class CovidPipeline:
@@ -35,9 +36,10 @@ class CovidPipeline:
         i) Swap staging and drop old table
     """
 
-    def __init__(self, dbupdates=DBUpdates()):
+    def __init__(self, dbupdates=DBUpdates(), createviews=CreateViews()):
         # Payload and sql interface
         self.database = dbupdates
+        self.createviews = createviews
         self.body = pd.DataFrame()
 
         # String properties
@@ -191,10 +193,11 @@ class CovidPipeline:
 
     def teardown(self):
         """Swap the existing to old, stage to new, and drop the old
+            Creates views after the swap
         """
 
-        # TODO: execute swap command
         self.database.swap_tables()
+        self.createviews.create_views()
 
     def run_pipeline(self):
         """Defines pipeline steps

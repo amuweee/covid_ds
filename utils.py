@@ -2,7 +2,8 @@ import os
 import datetime as dt
 import sqlite3
 
-from etl.constants import ETLConfigs, WorldPopConfig
+from etl.constants import ETLConfigs, WorldPopConfig, DBViewConfig
+
 
 def project_root():
     return os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +12,7 @@ def project_root():
 class DBUpdates:
     """Class for wrapping all the scripte related to updating the SQLite3 database
     """
+
     def __init__(self):
         """Setting all constants and props required to run SQL commands
         """
@@ -52,13 +54,13 @@ class DBUpdates:
         Args:
             df (pd.DataFrame): payload containing the ready data object to db insert
         """
-        
+
         df.to_sql(
             name="covid_daily_new",
             con=self.conn,
             dtype=self.sql_dtypes,
             if_exists="replace",
-            index=False
+            index=False,
         )
 
     def swap_tables(self):
@@ -105,14 +107,49 @@ class WorldPopUpdates:
         Args:
             df (pd.DataFrame): payload containing the ready data object to db insert
         """
-        
+
         df.to_sql(
             name=self.table_name,
             con=self.conn,
             dtype=self.sql_dtypes,
             if_exists="replace",
-            index=False
+            index=False,
         )
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
+
+
+class CreateViews:
+    """Create views in the covid database that will summarize the daily data
+    """
+
+    def __init__(self):
+        """Setting all constants and props required to run SQL commands
+        """
+
+        # Static properties
+        self.project_root = project_root()
+        self.database_name = DBViewConfig.DB_NAME
+        self.sql_script = DBViewConfig.SQL_SCRIPT
+
+        # SQL scripts
+        with open(
+            "{}/sql/{}.sql".format(self.project_root, self.sql_script)
+        ) as setup_sql:
+            self.sql_command = setup_sql.read()
+
+        # Create/establish DB connection
+        self.conn = sqlite3.connect(
+            "{}/{}.db".format(self.project_root, self.database_name)
+        )
+        self.cur = self.conn.cursor()
+
+    def create_views(self):
+        """Executes SQL commands to create views
+        """
+
+        self.cur.executescript(self.sql_command)
         self.conn.commit()
         self.cur.close()
         self.conn.close()

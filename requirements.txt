@@ -5,6 +5,7 @@ seaborn==0.10.1
 missingno==0.4.2
 
 # mapping and dashbords
+plotly==4.7.0
 streamlit==0.60.0
 
 # etl specific

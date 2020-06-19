@@ -94,16 +94,16 @@ top_5_country = country_overall.sort_values(by="confirmed", ascending=False)
 
 # --------------------- Dashboard --------------------- #
 
-st.write(f"# COVID-19 Interactive Dashboard")
+st.write("# COVID-19 Interactive Dashboard")
 st.write(f"__Data as of {max_date}__")
 
 
-fig = go.Figure(data=[
+fig_daily = go.Figure(data=[
     go.Bar(name="Death Cases", x=daily_overall["date"], y=daily_overall["death"]),
     go.Bar(name="Confirmed Cases", x=daily_overall["date"], y=daily_overall["confirmed"])
 ])
-fig.update_layout(barmode="stack", legend_orientation="h")
-st.plotly_chart(fig)
+fig_daily.update_layout(barmode="relative", legend_orientation="h")
+st.plotly_chart(fig_daily)
 
 
 selected_countries = st.multiselect(

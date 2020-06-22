@@ -72,7 +72,7 @@ class WorldPopConfig:
     # SQL properties
     DB_NAME = "population"
     TABLE_NAME = "world_population"
-    SETUP_SQL = "DROP TABLE IF EXISTS {}".format(TABLE_NAME)
+    SETUP_SQL = f"DROP TABLE IF EXISTS {TABLE_NAME}"
     SQL_DTYPES = {
         "id": "INTEGER",
         "country": "TEXT",

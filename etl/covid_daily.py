@@ -182,8 +182,11 @@ class CovidPipeline:
             ~((self.body["country"] == "US") & (self.body["state"].isnull()))
         ]
 
-        # addl etl_loadtime field
+        # add etl_loadtime field
         self.body["etl_load_time"] = dt.datetime.now()
+
+        # change "US" label to "United States"
+        self.body = self.body.replace(["US"], "United States")
 
     def load(self):
         """Load the finalized DataFrame into the staging table in databse

@@ -1,11 +1,12 @@
 # COVID-19 Data Project
 
 
-**Disclaimer: This project is for self-learning purpose, take the predictions with a grain of salt**
 
 This repository contains codes and scripts related to extracting daily infected and death data from gitrepo maintained by [JHUCSSE COVID-19 Data](https://github.com/CSSEGISandData/COVID-19).  
 World population data scraped from [Worldometer](https://www.worldometers.info/world-population/population-by-country/).  
-The timeseries data is transformed and stored into each data sources are stored in separate SQLite3 database for use with the datascience workflow.
+The timeseries data is transformed and stored into each data sources are stored in separate SQLite3 database for use with the datascience workflow.  
+
+The data science workflow consists of data pre-processing and exploratory data analysis in a jupyter notebook, an interactive dashboard built using [streamlit](https://www.streamlit.io/) 
 
 ### Installing
 
@@ -23,6 +24,7 @@ pip install -r requirements.txt
 Project is separated into multiple sections
 - **ETL** Retrieving COVID-19 infected and death data, along with world population data 
 - **Data Preprocessing** Scripts and notebooks related to preprocessing the raw data
+- **Dashboards** Contains an interactive webapp for visualizing COVID-19 cases
 
 ### ETL 
 

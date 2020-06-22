@@ -109,6 +109,7 @@ countries_w_states = state_daily["country"].unique().tolist()
 
 # --------------------- Side bar --------------------- #
 
+st.sidebar.markdown("[SOURCE CODE](https://github.com/amuweee/covid_ds)")
 st.sidebar.markdown("### DATA SEGMENTATION")
 segmentation = st.sidebar.radio(
     label="Select data breakdown:", options=("Global", "By Countries"), index=0

@@ -30,6 +30,12 @@ class ETLConfigs:
         "Combined_Key",
         "Population",
     ]
+    COUNTRY_NAME_DICT = {
+        "Burma": "Myanmar",
+        "Congo (Brazzaville)": "Congo",
+        "Congo (Kinshasa)": "Congo",
+        "Laos": "Lao People's Democratic Republic",
+    }
 
     # SQL properties
     DB_NAME = "covid_master"
@@ -67,6 +73,20 @@ class WorldPopConfig:
         "Med. Age": "median_age",
         "Urban Pop %": "urban_pop_perc",
         "World Share": "population_world_share",
+    }
+    COUNTRY_NAME_DICT = {
+        "DR Congo": "Congo",
+        "Laos": "Lao People's Democratic Republic",
+        "South Korea": "Korea, Republic of",
+        "North Korea": "Korea, Democratic People's Republic of",
+        "Czech Republic (Czechia)": "Czechia",
+        "Sao Tome & Principe": "Sao Tome and Principe",
+        "St. Vincent & Grenadines": "Saint Vincent and the Grenadines",
+        "U.S. Virgin Islands": "Virgin Islands, U.S.",
+        "Saint Kitts & Nevis": "Saint Kitts and Nevis",
+        "Faeroe Islands": "Faroe Islands",
+        "Wallis & Futuna": "Wallis and Futuna",
+        "Saint Pierre & Miquelon": "Saint Pierre and Miquelon",
     }
 
     # SQL properties

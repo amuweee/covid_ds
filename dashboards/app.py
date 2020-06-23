@@ -5,6 +5,7 @@ import os
 import sqlite3
 import plotly.express as px
 import plotly.graph_objects as go
+import pycountry
 
 from plotly.subplots import make_subplots
 
@@ -30,9 +31,27 @@ def project_root():
 project_root = project_root()
 
 
+def get_alpha3(country):
+    """Returns a ISO 3166-1 alpha-3 code for each countries based on the name 
+
+    Args:
+        country (string): name of the country
+
+    Returns:
+        string: alpha-3 iso code
+    """
+    try:
+        iso3 = pycountry.countries.search_fuzzy(country)[0].alpha_3
+    except:
+        iso3 = country
+    finally:
+        return iso3
+
+
 @st.cache(allow_output_mutation=True)
 def query_to_df(database=None, query=None):
     """Create a database connection to the SQLite database specified by the db_file
+        If a column with country name exist in the query, then run a 
 
     Arguments:
         db_file {string} -- name of database file
@@ -45,6 +64,11 @@ def query_to_df(database=None, query=None):
     except Error as e:
         print(e)
     df = pd.read_sql_query(query, conn)
+
+    col_list = df.columns.values.tolist()
+    if "country" in col_list:
+        df["iso_3"] = [get_alpha3(x) for x in df["country"]]
+
     return df
 
 
@@ -69,7 +93,7 @@ def plot_daily(df, metric):
     st.plotly_chart(fig)
 
 
-# --------------------- Loading data --------------------- #
+# --------------------- Loading data into DataFrames --------------------- #
 
 
 country_overall = query_to_df(
@@ -190,59 +214,5 @@ plot_daily(df, "confirmed")
 plot_daily(df, "death")
 
 
-# Infected charts
-# confirmed_fig = make_subplots(specs=[[{"secondary_y": True}]])
-# confirmed_fig.add_trace(
-#     go.Bar(name="Daily", x=df["date"], y=df["confirmed"]), secondary_y=False
-# )
-# confirmed_fig.add_trace(
-#     go.Scatter(name="Running Total", x=df["date"], y=df["csum_confirmed"]),
-#     secondary_y=True,
-# )
-# confirmed_fig.update_layout(
-#     title_text="Confirmed Infections over time", legend_orientation="h"
-# )
-# confirmed_fig.update_xaxes(title_text="Date")
-# confirmed_fig.update_yaxes(title_text="<b>Daily Infections</b>", secondary_y=False)
-# confirmed_fig.update_yaxes(title_text="<b>Total Infections</b>", secondary_y=True)
-# st.plotly_chart(confirmed_fig)
+# TODO: correlation plots: population/density/median age/urban pop
 
-
-# # Death charts
-# death_fig = make_subplots(specs=[[{"secondary_y": True}]])
-# death_fig.add_trace(
-#     go.Bar(name="Daily", x=df["date"], y=df["death"]), secondary_y=False
-# )
-# death_fig.add_trace(
-#     go.Scatter(name="Running Total", x=df["date"], y=df["csum_death"]),
-#     secondary_y=True,
-# )
-# death_fig.update_layout(title_text="Death over time", legend_orientation="h")
-# death_fig.update_xaxes(title_text="Date")
-# death_fig.update_yaxes(title_text="<b>Daily Deaths</b>", secondary_y=False)
-# death_fig.update_yaxes(title_text="<b>Total Deaths</b>", secondary_y=True)
-# st.plotly_chart(death_fig)
-
-
-# fig_daily = go.Figure(
-# data=[
-# go.Bar(name="Death Cases", x=daily_overall["date"], y=daily_overall["death"]),
-# go.Bar(
-# name="Confirmed Cases",
-# x=daily_overall["date"],
-# y=daily_overall["confirmed"],
-# ),
-# ]
-# )
-# fig_daily.update_layout(barmode="relative", legend_orientation="h")
-# st.plotly_chart(fig_daily)
-
-
-# line_chart = px.line(
-#     filter_country(country_daily, selected_countries),
-#     x="date",
-#     y="confirmed",
-#     title="Timeline of infections",
-#     color="country",
-# )
-# st.plotly_chart(line_chart, use_container_width=True)

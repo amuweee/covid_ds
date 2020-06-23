@@ -47,6 +47,7 @@ class CovidPipeline:
         self.drop_columns = ETLConfigs.DROP_COLUMNS
         self.location_column_dict = ETLConfigs.LOCATION_COLUMN_DICT
         self.locations = ETLConfigs.LOCATION_COLUMNS
+        self.country_dict = ETLConfigs.COUNTRY_NAME_DICT
 
     def download_to_df(self, url):
         """Given an url to a hosted csv file, download and stores as DataFrame
@@ -187,6 +188,12 @@ class CovidPipeline:
 
         # change "US" label to "United States"
         self.body = self.body.replace(["US"], "United States")
+
+        # rename country to be iso standard
+        country = (
+            self.body["country"].map(self.country_dict).fillna(self.body["country"])
+        )
+        self.body["country"] = country
 
     def load(self):
         """Load the finalized DataFrame into the staging table in databse

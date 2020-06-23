@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+
 pd.options.mode.chained_assignment = None
 
 from etl.constants import WorldPopConfig
@@ -33,6 +34,7 @@ class WorldPopPipepine:
     5. Teardown
         i) None
     """
+
     def __init__(self, worldpopdb=WorldPopUpdates()):
         # Payload and sql interface
         self.database = worldpopdb
@@ -41,6 +43,7 @@ class WorldPopPipepine:
         # Static properties
         self.source_url = WorldPopConfig.POP_URL
         self.header_dict = WorldPopConfig.HEADER_DICT
+        self.country_dict = WorldPopConfig.COUNTRY_NAME_DICT
 
     def setup(self):
         """Drop existin table if exists
@@ -59,11 +62,16 @@ class WorldPopPipepine:
 
     def transform(self):
         """Rename the columns appropriately to remove blank spaces and special characters
-        Also replaces 'N.A.' stored as string with np.NaN
+            Also replaces 'N.A.' stored as string with np.NaN, and properly renames some country names
+            so that pycountry library will be able to find
         """
 
         self.body.rename(columns=self.header_dict, inplace=True)
         self.body.replace({"N.A.": np.NaN}, inplace=True)
+        country = (
+            self.body["country"].map(self.country_dict).fillna(self.body["country"])
+        )
+        self.body["country"] = country
 
     def load(self):
         """Insert DataFrame into database

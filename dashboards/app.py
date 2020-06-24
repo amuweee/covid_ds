@@ -65,9 +65,10 @@ def query_to_df(database=None, query=None):
         print(e)
     df = pd.read_sql_query(query, conn)
 
-    col_list = df.columns.values.tolist()
-    if "country" in col_list:
-        df["iso_3"] = [get_alpha3(x) for x in df["country"]]
+    # FIXME: takes too long
+    # col_list = df.columns.values.tolist()
+    # if "country" in col_list:
+    #     df["iso_3"] = [get_alpha3(x) for x in df["country"]]
 
     return df
 
@@ -133,7 +134,10 @@ countries_w_states = state_daily["country"].unique().tolist()
 
 # --------------------- Side bar --------------------- #
 
-st.sidebar.markdown("[SOURCE CODE](https://github.com/amuweee/covid_ds)")
+st.sidebar.markdown(
+    "![github](https://appcenter.ms/images/logo-github.svg)  [**PROJECT**](https://github.com/amuweee/covid_ds)"
+)
+st.sidebar.markdown("-----")
 st.sidebar.markdown("### DATA SEGMENTATION")
 segmentation = st.sidebar.radio(
     label="Select data breakdown:", options=("Global", "By Countries"), index=0
@@ -214,5 +218,6 @@ plot_daily(df, "confirmed")
 plot_daily(df, "death")
 
 
+# TODO: fatality rate over time. comparison vs segmented and global
 # TODO: correlation plots: population/density/median age/urban pop
 

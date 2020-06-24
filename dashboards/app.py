@@ -13,6 +13,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+
 # --------------------- Helper functions --------------------- #
 
 
@@ -78,7 +79,6 @@ def plot_daily(df, metric):
     renames = {"confirmed": "Infections", "death": "Deaths"}
     label = renames[metric]
     df["csum"] = df[metric].cumsum()
-    country = df["country"].iloc[0]
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(name="Daily", x=df["date"], y=df[metric]), secondary_y=False)
@@ -92,6 +92,28 @@ def plot_daily(df, metric):
     fig.update_yaxes(title_text=f"Daily {label}", secondary_y=False)
     fig.update_yaxes(title_text=f"Total {label}", secondary_y=True)
     st.plotly_chart(fig)
+
+
+def plot_fatality(fig, df, state=False):
+
+    if state == False:
+        line_label = df["country"].iloc[0]
+    else:
+        line_label = df["state"].iloc[0]
+    df["csum_death"] = df["death"].cumsum()
+    df["csum_confirmed"] = df["confirmed"].cumsum()
+    df["case_fatality_ratio"] = df["csum_death"] / df["csum_confirmed"] * 1000
+    fig.add_trace(
+        go.Scatter(
+            x=df["date"], y=df["case_fatality_ratio"], mode="lines", name=line_label
+        )
+    )
+    fig.update_layout(
+        title_text=f"<b>Deaths per 1000 Infections</b>".upper(),
+        legend_orientation="h",
+    )
+    fig.update_xaxes(title_text="Date")
+    fig.update_yaxes(title_text=f"Fatality Rate")
 
 
 # --------------------- Loading data into DataFrames --------------------- #
@@ -219,5 +241,14 @@ plot_daily(df, "death")
 
 
 # TODO: fatality rate over time. comparison vs segmented and global
-# TODO: correlation plots: population/density/median age/urban pop
 
+fig_line = go.Figure()
+plot_fatality(fig_line, daily_overall)
+if segmentation == "Global":
+    pass
+elif show_state:
+    plot_fatality(fig_line, df, state=True)
+else:
+    plot_fatality(fig_line, df)
+st.plotly_chart(fig_line)
+# TODO: correlation plots: population/density/median age/urban pop

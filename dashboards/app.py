@@ -14,7 +14,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+# ------------------------------------------------------------ #
 # --------------------- Helper functions --------------------- #
+# ------------------------------------------------------------ #
 
 
 @st.cache
@@ -59,6 +61,7 @@ def query_to_df(database=None, query=None):
     Returns:
         DataFrame -- Contents of the sql query
     """
+
     conn = None
     try:
         conn = sqlite3.connect(f"{project_root}/{database}.db")
@@ -75,6 +78,12 @@ def query_to_df(database=None, query=None):
 
 
 def plot_daily(df, metric):
+    """Plots the daily infected or death in two axis - histogram for daily, line plot for cumulative
+
+    Args:
+        df (DataFrame): contains the data to plot, requires column for data and metric
+        metric (string): label of the column to plot. needs to exist in df
+    """
 
     renames = {"confirmed": "Infections", "death": "Deaths"}
     label = renames[metric]
@@ -109,14 +118,15 @@ def plot_fatality(fig, df, state=False):
         )
     )
     fig.update_layout(
-        title_text=f"<b>Deaths per 1000 Infections</b>".upper(),
-        legend_orientation="h",
+        title_text=f"<b>Deaths per 1000 Infections</b>".upper(), legend_orientation="h",
     )
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text=f"Fatality Rate")
 
 
+# ------------------------------------------------------------------------ #
 # --------------------- Loading data into DataFrames --------------------- #
+# ------------------------------------------------------------------------ #
 
 
 country_overall = query_to_df(
@@ -154,12 +164,15 @@ world_population = query_to_df(
 countries_w_states = state_daily["country"].unique().tolist()
 
 
+# ---------------------------------------------------- #
 # --------------------- Side bar --------------------- #
+# ---------------------------------------------------- #
+
 
 st.sidebar.markdown(
     "![github](https://appcenter.ms/images/logo-github.svg)  [**PROJECT**](https://github.com/amuweee/covid_ds)"
 )
-st.sidebar.markdown("-----")
+st.sidebar.markdown("----")
 st.sidebar.markdown("### DATA SEGMENTATION")
 segmentation = st.sidebar.radio(
     label="Select data breakdown:", options=("Global", "By Countries"), index=0
@@ -197,8 +210,12 @@ elif segmentation == "Global":
     df = daily_overall
     df["country"] = "Global"
 
+st.sidebar.markdown("----")
 
-# --------------------- Set up variables --------------------- #
+
+# ------------------------------------------------------------ #
+# --------------------- Helper functions --------------------- #
+# ------------------------------------------------------------ #
 
 
 max_date = max(daily_overall["date"]).strftime("%B %d, %Y")
@@ -216,7 +233,10 @@ total_fatality_rate = total_deaths / total_cases
 top_5_country = country_overall.sort_values(by="confirmed", ascending=False)
 
 
+# ----------------------------------------------------- #
 # --------------------- Dashboard --------------------- #
+# ----------------------------------------------------- #
+
 
 st.write("# COVID-19 Interactive Dashboard")
 st.write(f"__Data as of {max_date}__")
@@ -240,15 +260,22 @@ plot_daily(df, "confirmed")
 plot_daily(df, "death")
 
 
-# TODO: fatality rate over time. comparison vs segmented and global
-
 fig_line = go.Figure()
 plot_fatality(fig_line, daily_overall)
-if segmentation == "Global":
-    pass
-elif show_state:
-    plot_fatality(fig_line, df, state=True)
-else:
-    plot_fatality(fig_line, df)
+if segmentation == "By Countries":
+    if selection not in countries_w_states:
+        plot_fatality(fig_line, df)
+    else:
+        if show_state:
+            plot_fatality(fig_line, df, state=True)
+        else:
+            plot_fatality(fig_line, df)
+
 st.plotly_chart(fig_line)
+
+# TODO: chroploth map - add over time filters or animation
+
+# c_list = country_daily["country"].unique().tolist()
+# c_list
+
 # TODO: correlation plots: population/density/median age/urban pop

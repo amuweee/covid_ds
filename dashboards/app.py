@@ -284,13 +284,4 @@ st.markdown("----")
 country_daily["iso3"] = country_daily["country"].map(iso_dict)
 country_daily
 
-mn = min(daily_overall["date"])
-mx = max(daily_overall["date"])
-
-x = mn - mn
-r = mx - mn
-
-x
-r
-
 # TODO: correlation plots: population/density/median age/urban pop

@@ -34,23 +34,6 @@ def project_root():
 project_root = project_root()
 
 
-def get_alpha3(country):
-    """Returns a ISO 3166-1 alpha-3 code for each countries based on the name 
-
-    Args:
-        country (string): name of the country
-
-    Returns:
-        string: alpha-3 iso code
-    """
-    try:
-        iso3 = pycountry.countries.search_fuzzy(country)[0].alpha_3
-    except:
-        iso3 = country
-    finally:
-        return iso3
-
-
 @st.cache(allow_output_mutation=True)
 def query_to_df(database=None, query=None):
     """Create a database connection to the SQLite database specified by the db_file
@@ -69,12 +52,29 @@ def query_to_df(database=None, query=None):
         print(e)
     df = pd.read_sql_query(query, conn)
 
-    # FIXME: takes too long
-    # col_list = df.columns.values.tolist()
-    # if "country" in col_list:
-    #     df["iso_3"] = [get_alpha3(x) for x in df["country"]]
-
     return df
+
+
+@st.cache
+def create_country_iso_dict(df):
+    """Returns a ISO 3166-1 alpha-3 code for each countries based on the country name
+
+    Args:
+        df (DataFrame): data that contains a column of country names
+
+    Returns:
+        dictionary: dictionary takes country name as key, and iso code as value
+    """
+
+    c_list = country_overall["country"].unique().tolist()
+    country_iso_dict = {}
+    for country in c_list:
+        try:
+            iso3 = pycountry.countries.search_fuzzy(country)[0].alpha_3
+        except:
+            iso3 = country
+        country_iso_dict[country] = iso3
+    return country_iso_dict
 
 
 def plot_daily(df, metric):
@@ -169,25 +169,29 @@ countries_w_states = state_daily["country"].unique().tolist()
 # ---------------------------------------------------- #
 
 
+# github link and project info
 st.sidebar.markdown(
     "![github](https://appcenter.ms/images/logo-github.svg)  [**PROJECT**](https://github.com/amuweee/covid_ds)"
 )
 st.sidebar.markdown("----")
+
 st.sidebar.markdown("### DATA SEGMENTATION")
 segmentation = st.sidebar.radio(
     label="Select data breakdown:", options=("Global", "By Countries"), index=0
 )
 
+# country and state data segmentation options
 if segmentation == "By Countries":
 
+    # order the country list to put Canada, US and UK in the first options
     ordered_list = ["Canada", "United States", "United Kingdom"]
     list_countries = country_overall["country"].to_list()
-
     for c in ordered_list:
         list_countries.remove(c)
     for c in list_countries:
         ordered_list.append(c)
 
+    # create selections for countries with state level data
     selection = st.sidebar.selectbox(
         label="Select the countries to display", options=ordered_list,
     )
@@ -195,15 +199,12 @@ if segmentation == "By Countries":
 
     if selection in countries_w_states:
         show_state = st.sidebar.checkbox("Breakdown by state/province")
-
         if show_state:
             df_selection = state_daily[state_daily["country"] == selection]
             state_list = df_selection["state"].unique().tolist()
-
             state = st.sidebar.selectbox(
                 label="Select the state to display", options=state_list
             )
-
             df = state_daily[state_daily["state"] == state]
 
 elif segmentation == "Global":
@@ -214,10 +215,11 @@ st.sidebar.markdown("----")
 
 
 # ------------------------------------------------------------ #
-# --------------------- Helper functions --------------------- #
+# --------------------- Set up variables --------------------- #
 # ------------------------------------------------------------ #
 
 
+# date of the last data import
 max_date = max(daily_overall["date"]).strftime("%B %d, %Y")
 
 # for global cases
@@ -230,7 +232,8 @@ total_cases = df["confirmed"].sum()
 total_deaths = df["death"].sum()
 total_fatality_rate = total_deaths / total_cases
 
-top_5_country = country_overall.sort_values(by="confirmed", ascending=False)
+# dictionary for translating country name to iso codes
+iso_dict = create_country_iso_dict(country_overall)
 
 
 # ----------------------------------------------------- #
@@ -238,6 +241,7 @@ top_5_country = country_overall.sort_values(by="confirmed", ascending=False)
 # ----------------------------------------------------- #
 
 
+# headers and top leve summaries
 st.write("# COVID-19 Interactive Dashboard")
 st.write(f"__Data as of {max_date}__")
 st.markdown(
@@ -248,6 +252,7 @@ st.markdown(
     **Case-Fatality Ratio** = Recorded Deaths / Confirmed Infections
     """
 )
+st.markdown("----")
 st.markdown(
     f"### **Infections: {total_cases:,} | Deaths: {total_deaths:,} | Case-Fatality Ratio: {total_fatality_rate:.2%}** "
 )
@@ -256,10 +261,11 @@ if segmentation == "By Countries":
         f"#### GLOBAL **Infections: {global_cases:,} | Deaths: {global_deaths:,} | Case-Fatality Ratio: {global_fataility_rate:.2%}** "
     )
 
+# plot daily and running total cases
 plot_daily(df, "confirmed")
 plot_daily(df, "death")
 
-
+# plot death per infection chart
 fig_line = go.Figure()
 plot_fatality(fig_line, daily_overall)
 if segmentation == "By Countries":
@@ -270,12 +276,21 @@ if segmentation == "By Countries":
             plot_fatality(fig_line, df, state=True)
         else:
             plot_fatality(fig_line, df)
-
 st.plotly_chart(fig_line)
 
+st.markdown("----")
 # TODO: chroploth map - add over time filters or animation
 
-# c_list = country_daily["country"].unique().tolist()
-# c_list
+country_daily["iso3"] = country_daily["country"].map(iso_dict)
+country_daily
+
+mn = min(daily_overall["date"])
+mx = max(daily_overall["date"])
+
+x = mn - mn
+r = mx - mn
+
+x
+r
 
 # TODO: correlation plots: population/density/median age/urban pop

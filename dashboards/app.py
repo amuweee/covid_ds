@@ -6,6 +6,7 @@ import sqlite3
 import plotly.express as px
 import plotly.graph_objects as go
 import pycountry
+import pycountry_convert as pc
 
 from plotly.subplots import make_subplots
 
@@ -57,7 +58,7 @@ def query_to_df(database=None, query=None):
 
 @st.cache
 def create_country_iso_dict(df):
-    """Returns a ISO 3166-1 alpha-3 code for each countries based on the country name
+    """Returns a ISO 3166-1 alpha-2 code for each countries based on the country name
 
     Args:
         df (DataFrame): data that contains a column of country names
@@ -70,11 +71,24 @@ def create_country_iso_dict(df):
     country_iso_dict = {}
     for country in c_list:
         try:
-            iso3 = pycountry.countries.search_fuzzy(country)[0].alpha_3
+            iso2 = pycountry.countries.search_fuzzy(country)[0].alpha_2
         except:
-            iso3 = country
-        country_iso_dict[country] = iso3
+            iso2 = country
+        country_iso_dict[country] = iso2
     return country_iso_dict
+
+
+@st.cache
+def create_continent_dict(dict):
+
+    continent_dict = {}
+    for key, value in dict:
+        try:
+            continent = pc.country_alpha2_to_continent_code(value)
+        except:
+            continent = key
+        continent_dict[key] = continent
+    return continent_dict
 
 
 def plot_daily(df, metric):
@@ -95,7 +109,10 @@ def plot_daily(df, metric):
         go.Scatter(name="Running Total", x=df["date"], y=df["csum"]), secondary_y=True,
     )
     fig.update_layout(
-        title_text=f"<b>{label} over time</b>".upper(), legend_orientation="h",
+        title_text=f"<b>{label} over time</b>".upper(),
+        legend_orientation="h",
+        width=800,
+        height=500,
     )
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text=f"Daily {label}", secondary_y=False)
@@ -125,7 +142,10 @@ def plot_fatality(fig, df, state=False):
         )
     )
     fig.update_layout(
-        title_text=f"<b>Deaths per 1000 Infections</b>".upper(), legend_orientation="h",
+        title_text=f"<b>Deaths per 1000 Infections</b>".upper(),
+        legend_orientation="h",
+        width=750,
+        height=500,
     )
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text=f"Fatality Rate")
@@ -241,6 +261,7 @@ total_fatality_rate = total_deaths / total_cases
 
 # dictionary for translating country name to iso codes
 iso_dict = create_country_iso_dict(country_overall)
+continent_dict = create_continent_dict(iso_dict)
 
 
 # ----------------------------------------------------- #
@@ -286,16 +307,20 @@ if segmentation == "By Countries":
 st.plotly_chart(fig_line)
 
 st.markdown("----")
+
 # TODO: chroploth map - add over time filters or animation
 
-country_daily["iso3"] = country_daily["country"].map(iso_dict)
-country_daily.groupby(["country"]).sum().groupby(level=0).cumsum().reset_index()
-country_daily
+country_overall["iso2"] = country_overall["country"].map(iso_dict)
 
+choropleth_fig = px.choropleth(
+    title="global confirmed cases",
+    data_frame=country_overall,
+    locations="iso3",
+    hover_name="country",
+    hover_data=["confirmed", "death"],
+)
 
-choropleth_fig = go.Figure(go.Scattergeo())
-
-choropleth_fig.update_layout(height=350, margin={"r": 0, "t": 0, "l": 0, "b": 0})
+choropleth_fig.update_layout(height=400, margin={"r": 0, "l": 0, "b": 0})
 
 choropleth_fig.update_geos(
     visible=False,
@@ -307,5 +332,7 @@ choropleth_fig.update_geos(
 )
 
 st.plotly_chart(choropleth_fig)
+
+continent_dict
 
 # TODO: correlation plots: population/density/median age/urban pop

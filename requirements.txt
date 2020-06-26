@@ -3,6 +3,7 @@ numpy==1.18.3
 seaborn==0.10.1
 missingno==0.4.2
 pycountry==19.8.18
+pycountry-convert==0.7.2
 plotly==4.7.0
 streamlit==0.60.0
 requests==2.23.0

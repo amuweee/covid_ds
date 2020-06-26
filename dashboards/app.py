@@ -104,6 +104,13 @@ def plot_daily(df, metric):
 
 
 def plot_fatality(fig, df, state=False):
+    """Plots the fatality over infected cases ratios over time
+
+    Args:
+        fig (plotly figure): plotly figure to chart the data onto
+        df (DataFrame): data containing both infected and death cases over time
+        state (bool, optional): flag for whether to chart based on state or country. Defaults to False.
+    """
 
     if state == False:
         line_label = df["country"].iloc[0]
@@ -282,6 +289,23 @@ st.markdown("----")
 # TODO: chroploth map - add over time filters or animation
 
 country_daily["iso3"] = country_daily["country"].map(iso_dict)
+country_daily.groupby(["country"]).sum().groupby(level=0).cumsum().reset_index()
 country_daily
+
+
+choropleth_fig = go.Figure(go.Scattergeo())
+
+choropleth_fig.update_layout(height=350, margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+choropleth_fig.update_geos(
+    visible=False,
+    resolution=50,
+    showcountries=True,
+    countrycolor="RebeccaPurple",
+    showcoastlines=True,
+    coastlinecolor="RebeccaPurple",
+)
+
+st.plotly_chart(choropleth_fig)
 
 # TODO: correlation plots: population/density/median age/urban pop

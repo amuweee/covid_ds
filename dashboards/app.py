@@ -56,8 +56,8 @@ def query_to_df(database=None, query=None):
     return df
 
 
-@st.cache
-def create_country_iso_dict(df):
+@st.cache(allow_output_mutation=True)
+def create_country_iso_dict(df, iso):
     """Returns a ISO 3166-1 alpha-2 code for each countries based on the country name
 
     Args:
@@ -67,14 +67,17 @@ def create_country_iso_dict(df):
         dictionary: dictionary takes country name as key, and iso code as value
     """
 
-    c_list = country_overall["country"].unique().tolist()
+    c_list = df["country"].unique().tolist()
     country_iso_dict = {}
     for country in c_list:
         try:
-            iso2 = pycountry.countries.search_fuzzy(country)[0].alpha_2
+            if iso == "iso2":
+                iso_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+            elif iso == "iso3":
+                iso_code = pycountry.countries.search_fuzzy(country)[0].alpha_3
         except:
-            iso2 = country
-        country_iso_dict[country] = iso2
+            iso_code = "N/A"
+        country_iso_dict[country] = iso_code
     return country_iso_dict
 
 
@@ -82,11 +85,19 @@ def create_country_iso_dict(df):
 def create_continent_dict(dict):
 
     continent_dict = {}
-    for key, value in dict:
+    codename = {
+        "AS": "Asia",
+        "EU": "Europe",
+        "AF": "Africa",
+        "NA": "North America",
+        "SA": "South America",
+        "OC": "Oceania",
+    }
+    for key, value in dict.items():
         try:
-            continent = pc.country_alpha2_to_continent_code(value)
+            continent = codename[pc.country_alpha2_to_continent_code(value)]
         except:
-            continent = key
+            continent = "N/A"
         continent_dict[key] = continent
     return continent_dict
 
@@ -260,8 +271,9 @@ total_deaths = df["death"].sum()
 total_fatality_rate = total_deaths / total_cases
 
 # dictionary for translating country name to iso codes
-iso_dict = create_country_iso_dict(country_overall)
-continent_dict = create_continent_dict(iso_dict)
+iso2_dict = create_country_iso_dict(country_overall, "iso2")
+iso3_dict = create_country_iso_dict(country_overall, "iso3")
+continent_dict = create_continent_dict(iso2_dict)
 
 
 # ----------------------------------------------------- #
@@ -310,29 +322,63 @@ st.markdown("----")
 
 # TODO: chroploth map - add over time filters or animation
 
-country_overall["iso2"] = country_overall["country"].map(iso_dict)
+country_overall["iso2"] = country_overall["country"].map(iso2_dict)
+country_overall["iso3"] = country_overall["country"].map(iso3_dict)
+country_overall["continent"] = country_overall["country"].map(continent_dict)
 
-choropleth_fig = px.choropleth(
-    title="global confirmed cases",
-    data_frame=country_overall,
-    locations="iso3",
-    hover_name="country",
-    hover_data=["confirmed", "death"],
-)
+world_population["iso3"] = world_population["country"].map(iso3_dict)
 
-choropleth_fig.update_layout(height=400, margin={"r": 0, "l": 0, "b": 0})
+map_data = pd.merge(country_overall, world_population, how="left", on="iso3")
 
-choropleth_fig.update_geos(
-    visible=False,
-    resolution=50,
-    showcountries=True,
-    countrycolor="RebeccaPurple",
+map_data
+
+global_fig = go.Figure(go.Scattergeo())
+global_fig.update_geos(
     showcoastlines=True,
-    coastlinecolor="RebeccaPurple",
+    coastlinecolor="Black",
+    showland=True,
+    showlakes=True,
+    lakecolor="Lightblue",
 )
+global_fig.update_layout(height=600, margin={"r": 0, "l": 0, "b": 0})
+st.plotly_chart(global_fig)
 
-st.plotly_chart(choropleth_fig)
 
-continent_dict
+# scatter_geo_fig = px.choropleth(
+#     country_overall,
+#     locations="iso3",
+#     locationmode="ISO-3",
+#     color="continent",
+#     projection="natural earth",
+#     hover_name="country",
+#     hover_data=["confirmed", "death"],
+# )
+# scatter_geo_fig.update_layout(
+#     title_text="Global map", legend_orientation="h",
+# )
+# st.plotly_chart(scatter_geo_fig)
+
+# choropleth_fig = px.choropleth(
+#     title="global confirmed cases",
+#     data_frame=country_overall,
+#     color="confirmed",
+#     color_continuous_scale="",
+#     locations="iso2",
+#     hover_name="country",
+#     hover_data=["confirmed", "death"],
+# )
+
+# choropleth_fig.update_layout(height=400, margin={"r": 0, "l": 0, "b": 0})
+
+# choropleth_fig.update_geos(
+#     visible=False,
+#     resolution=50,
+#     showcountries=True,
+#     countrycolor="RebeccaPurple",
+#     showcoastlines=True,
+#     coastlinecolor="RebeccaPurple",
+# )
+
+# st.plotly_chart(choropleth_fig)
 
 # TODO: correlation plots: population/density/median age/urban pop

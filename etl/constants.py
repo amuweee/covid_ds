@@ -35,6 +35,7 @@ class ETLConfigs:
         "Congo (Brazzaville)": "Congo",
         "Congo (Kinshasa)": "Congo",
         "Laos": "Lao People's Democratic Republic",
+        "Korea, South": "Korea, Republic of",
     }
 
     # SQL properties

@@ -332,16 +332,26 @@ map_data = pd.merge(country_overall, world_population, how="left", on="iso3")
 
 map_data
 
-global_fig = go.Figure(go.Scattergeo())
-global_fig.update_geos(
-    showcoastlines=True,
-    coastlinecolor="Black",
-    showland=True,
-    showlakes=True,
-    lakecolor="Lightblue",
+global_fig = px.choropleth(
+    map_data,
+    locations="iso3",
+    color="confirmed",
+    hover_name="country_x",
+    color_continuous_scale=px.colors.sequential.matter,
 )
-global_fig.update_layout(height=600, margin={"r": 0, "l": 0, "b": 0})
+global_fig.update_layout(width=900, margin={"r": 0, "l": 0, "b": 0})
 st.plotly_chart(global_fig)
+
+
+ex_df = px.data.gapminder().query("year==2007")
+ex_fig = px.choropleth(
+    ex_df,
+    locations="iso_alpha",
+    color="lifeExp",  # lifeExp is a column of gapminder
+    hover_name="country",  # column to add to hover information
+    color_continuous_scale=px.colors.sequential.Plasma,
+)
+st.plotly_chart(ex_fig)
 
 
 # scatter_geo_fig = px.choropleth(
@@ -359,13 +369,6 @@ st.plotly_chart(global_fig)
 # st.plotly_chart(scatter_geo_fig)
 
 # choropleth_fig = px.choropleth(
-#     title="global confirmed cases",
-#     data_frame=country_overall,
-#     color="confirmed",
-#     color_continuous_scale="",
-#     locations="iso2",
-#     hover_name="country",
-#     hover_data=["confirmed", "death"],
 # )
 
 # choropleth_fig.update_layout(height=400, margin={"r": 0, "l": 0, "b": 0})

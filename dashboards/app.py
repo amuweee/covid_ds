@@ -37,8 +37,7 @@ project_root = project_root()
 
 @st.cache(allow_output_mutation=True)
 def query_to_df(database=None, query=None):
-    """Create a database connection to the SQLite database specified by the db_file
-        If a column with country name exist in the query, then run a 
+    """Create a database connection to the SQLite database specified by the db_file.
 
     Arguments:
         db_file {string} -- name of database file
@@ -174,7 +173,6 @@ country_overall = query_to_df(
 country_daily = query_to_df(
     database="covid_master", query="SELECT * FROM country_daily"
 )
-country_daily["date"] = pd.to_datetime(country_daily["date"])
 
 state_daily = query_to_df(
     database="covid_master", query="SELECT * FROM state_daily WHERE state IS NOT NULL"
@@ -193,7 +191,6 @@ daily_overall = query_to_df(
     GROUP BY date
     """,
 )
-daily_overall["date"] = pd.to_datetime(daily_overall["date"])
 
 world_population = query_to_df(
     database="population", query="SELECT * FROM world_population"
@@ -258,7 +255,7 @@ st.sidebar.markdown("----")
 
 
 # date of the last data import
-max_date = max(daily_overall["date"]).strftime("%B %d, %Y")
+max_date = max(pd.to_datetime(daily_overall["date"])).strftime("%B %d, %Y")
 
 # for global cases
 global_cases = country_overall["confirmed"].sum()
@@ -326,9 +323,16 @@ country_overall["iso2"] = country_overall["country"].map(iso2_dict)
 country_overall["iso3"] = country_overall["country"].map(iso3_dict)
 country_overall["continent"] = country_overall["country"].map(continent_dict)
 
+country_daily["iso2"] = country_daily["country"].map(iso2_dict)
+country_daily["iso3"] = country_daily["country"].map(iso3_dict)
+country_daily["continent"] = country_daily["country"].map(continent_dict)
+
 world_population["iso3"] = world_population["country"].map(iso3_dict)
 
-map_data = pd.merge(country_overall, world_population, how="left", on="iso3")
+map_data = pd.merge(country_daily, world_population, how="left", on="iso3")
+map_data["date_formatted"] = pd.to_datetime(
+    map_data["date"], format="%Y-%m-%d", errors="ignore"
+).astype(str)
 
 map_data
 
@@ -338,20 +342,10 @@ global_fig = px.choropleth(
     color="confirmed",
     hover_name="country_x",
     color_continuous_scale=px.colors.sequential.matter,
+    animation_frame="date_formatted",
 )
-global_fig.update_layout(width=900, margin={"r": 0, "l": 0, "b": 0})
+global_fig.update_layout(width=750, height=520, margin={"r": 1, "l": 1, "b": 0})
 st.plotly_chart(global_fig)
-
-
-ex_df = px.data.gapminder().query("year==2007")
-ex_fig = px.choropleth(
-    ex_df,
-    locations="iso_alpha",
-    color="lifeExp",  # lifeExp is a column of gapminder
-    hover_name="country",  # column to add to hover information
-    color_continuous_scale=px.colors.sequential.Plasma,
-)
-st.plotly_chart(ex_fig)
 
 
 # scatter_geo_fig = px.choropleth(

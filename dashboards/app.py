@@ -15,9 +15,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-# ------------------------------------------------------------ #
-# --------------------- Helper functions --------------------- #
-# ------------------------------------------------------------ #
+# ------------------------------------------------------------------ #
+# --------------------- Sec.0 Helper functions --------------------- #
+# ------------------------------------------------------------------ #
 
 
 @st.cache
@@ -161,9 +161,9 @@ def plot_fatality(fig, df, state=False):
     fig.update_yaxes(title_text=f"Fatality Rate")
 
 
-# ------------------------------------------------------------------------ #
-# --------------------- Loading data into DataFrames --------------------- #
-# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------ #
+# --------------------- Sec.1 Loading data into DataFrames --------------------- #
+# ------------------------------------------------------------------------------ #
 
 
 country_overall = query_to_df(
@@ -199,9 +199,9 @@ world_population = query_to_df(
 countries_w_states = state_daily["country"].unique().tolist()
 
 
-# ---------------------------------------------------- #
-# --------------------- Side bar --------------------- #
-# ---------------------------------------------------- #
+# ---------------------------------------------------------- #
+# --------------------- Sec.2 Side bar --------------------- #
+# ---------------------------------------------------------- #
 
 
 # github link and project info
@@ -249,9 +249,9 @@ elif segmentation == "Global":
 st.sidebar.markdown("----")
 
 
-# ------------------------------------------------------------ #
-# --------------------- Set up variables --------------------- #
-# ------------------------------------------------------------ #
+# ------------------------------------------------------------------ #
+# --------------------- Sec.3 Set up variables --------------------- #
+# ------------------------------------------------------------------ #
 
 
 # date of the last data import
@@ -273,9 +273,9 @@ iso3_dict = create_country_iso_dict(country_overall, "iso3")
 continent_dict = create_continent_dict(iso2_dict)
 
 
-# ----------------------------------------------------- #
-# --------------------- Dashboard --------------------- #
-# ----------------------------------------------------- #
+# ----------------------------------------------------------- #
+# --------------------- Sec.4 Dashboard --------------------- #
+# ----------------------------------------------------------- #
 
 
 # headers and top leve summaries
@@ -307,6 +307,7 @@ fig_line = go.Figure()
 plot_fatality(fig_line, daily_overall)
 if segmentation == "By Countries":
     if selection not in countries_w_states:
+
         plot_fatality(fig_line, df)
     else:
         if show_state:
@@ -319,31 +320,31 @@ st.markdown("----")
 
 # TODO: chroploth map - add over time filters or animation
 
-country_overall["iso2"] = country_overall["country"].map(iso2_dict)
-country_overall["iso3"] = country_overall["country"].map(iso3_dict)
-country_overall["continent"] = country_overall["country"].map(continent_dict)
+@st.cache
+def plot_cholopleth(df):
 
-country_daily["iso2"] = country_daily["country"].map(iso2_dict)
-country_daily["iso3"] = country_daily["country"].map(iso3_dict)
-country_daily["continent"] = country_daily["country"].map(continent_dict)
+    df["iso2"] = df["country"].map(iso2_dict)
+    df["iso3"] = df["country"].map(iso3_dict)
+    df["continent"] = df["country"].map(continent_dict)
+    df["date_formatted"] = pd.to_datetime(
+        df["date"], format="%Y-%m-%d", errors="ignore"
+    ).astype(str)
+    cholo_fig = px.choropleth(
+        df,
+        locations="iso3",
+        color="confirmed",
+        hover_name="country",
+        color_continuous_scale=px.colors.sequential.matter,
+        animation_frame="date_formatted",
+    )
 
-world_population["iso3"] = world_population["country"].map(iso3_dict)
+    return cholo_fig
 
-map_data = pd.merge(country_daily, world_population, how="left", on="iso3")
-map_data["date_formatted"] = pd.to_datetime(
-    map_data["date"], format="%Y-%m-%d", errors="ignore"
-).astype(str)
+#merges
+# world_population["iso3"] = world_population["country"].map(iso3_dict)
+# map_data = pd.merge(country_daily, world_population, how="left", on="iso3")
 
-map_data
-
-global_fig = px.choropleth(
-    map_data,
-    locations="iso3",
-    color="confirmed",
-    hover_name="country_x",
-    color_continuous_scale=px.colors.sequential.matter,
-    animation_frame="date_formatted",
-)
+global_fig = plot_cholopleth(country_daily)
 global_fig.update_layout(width=750, height=520, margin={"r": 1, "l": 1, "b": 0})
 st.plotly_chart(global_fig)
 
